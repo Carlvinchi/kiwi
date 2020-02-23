@@ -95,7 +95,157 @@ const crypto = require('crypto');
            
     }); 
 
-    
+//Forgot password route and sending email
+router.post('/forgotpassword', async (req, res) => {
+    console.log(req.body);
+
+    const { email } = req.body;
+
+    if (!email) {
+        res.status(422).send({ error: "You must provide email" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+
+        res.status(422).send({ error: "User not found in database" });
+    }
+
+
+    else {
+
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        resetPasswordToken = resetToken;
+
+        try {
+            const insertResetPasswordTokenToDatabse = await User.updateOne({ email }, {
+                resetPasswordToken: resetPasswordToken,
+                resetPasswordExpires: Date.now() + 3600000
+            });
+            res.send({ message: "Success, email being sent" });
+        } catch (err) {
+            res.status(422).send(err.message);
+        }
+
+
+
+        //Testing mail
+        const myEmail = process.env.EMAIL;
+        const myPassword = process.env.PASSWORD;
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: myEmail,
+                pass: myPassword
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+
+        });
+
+        const mailOptions = {
+            from: myEmail,
+            to: email,
+            subject: 'Password Reset Link',
+            text: `Hello ${user.userName}, you requested to reset your password. Below is the link to reset your password. \n\n`
+                + `http://localhost:3000/reset?resetToken=${resetToken} \n\n`
+        }
+
+
+
+        transporter.sendMail(mailOptions, function (err, res) {
+            if (err) {
+                console.log("Erro has ocurred", err);
+                res.json({ error: "Email not sent" });
+            }
+            else {
+                console.log("email sent!");
+                return res.json('sent ooooooo');
+
+
+            }
+        });
+
+        //Testing mail
+    }
+
+});
+
+//Update password via reset link
+router.put('/reset/', async (req, res) => {
+    const { email, password } = req.body;
+
+    let user = await User.findOne({
+
+        resetPasswordToken: req.query.resetToken,
+        resetPasswordExpires: {
+            $gt: Date.now()
+        }
+    });
+
+    if (!user) {
+        console.log("Password reset link is invalid or expired");
+        res.json('Link expired');
+    }
+
+    else {
+        // let user = await User.findOne({email});
+
+        console.log("User found eeeeeeh");
+
+        try {
+
+            const updatePassword = (user.password = password);
+            const updateResetPasswordToken = (user.resetPasswordToken = '');
+            const updateResetPasswordExpires = (user.resetPasswordExpires = null);
+
+            await user.save();
+            const token = jwt.sign({ userId: user._id }, tokenKey);
+            res.send({
+                token,
+                message: 'paasword changed!'
+            });
+
+        } catch (error) {
+            res.status(422).send(error.message);
+        }
+
+    }
+
+
+
+});
+
+// It is not in use 
+router.get('/reset/', async (req, res) => {
+
+    let user = await User.findOne({
+
+        resetPasswordToken: req.query.resetToken,
+        resetPasswordExpires: {
+            $gt: Date.now()
+        }
+    });
+
+    if (!user) {
+        console.log("Password reset link is invalid");
+        res.json('Link expired');
+    }
+    else {
+        res.status(200).send({
+            username: user.userName,
+            message: 'Password reset link ok'
+        });
+        console.log("Link working");
+
+    }
+
+});
+
+
+
 
 
 module.exports = router;
