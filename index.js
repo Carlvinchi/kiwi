@@ -4,7 +4,7 @@
         const mongoose = require('mongoose');
         const router = express.Router();
         const app = express();
-        const path = require('path');
+        const path = require('path'); 
         require('./models/user');
         const requireToken = require('./middleware/requireToken');
         const authRoutes = require('./routes/authRoutes');

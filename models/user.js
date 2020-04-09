@@ -24,9 +24,7 @@ const tokenKey = module.exports = '7x0jhxt&quot;9(thpX6';
                 index:true
 
             },
-            profileImage:{
-                type:String
-            },
+            
             password: {
                 type:String,
                 required:true

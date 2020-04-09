@@ -52,12 +52,13 @@
                 const {firstName, lastName,email, mobileNumber,university, address_1, userName,profileImage, password,resetPasswordToken,resetPasswordExpires} = req.body;
                     
                 try {
-                    const user = new User({email, userName,profileImage, password});
+                    const user = new User({email, userName, password}); 
                 await user.save();
                 const token = jwt.sign({ userId: user._id }, tokenKey);
                 res.send({token});  
                 } catch (err) {
-                    res.status(422).send(err.message);
+                    res.send({err});
+                    //res.status(422).send(err.message);
                 }   
             }); 
 //------------------------------------------------------------------------------
